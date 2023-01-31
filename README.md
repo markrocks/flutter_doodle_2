@@ -1,7 +1,7 @@
-# processing_paint
+# flutter_doodle
 
-A new Flutter project.
-
+This is the base for a flutter painting app. This uses the flutter processing library by super declarative.
+ 
 ## Getting Started
 
 This project is a starting point for a Flutter application.
