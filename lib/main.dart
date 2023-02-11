@@ -1,5 +1,7 @@
 // Derived from: https://github.com/matthew-carroll/flutter_processing/blob/main/example/lib/generative_art/colored_circles.dart
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart' hide Image;
 import 'package:flutter_processing/flutter_processing.dart';
 import 'dart:developer';
@@ -31,6 +33,8 @@ class PaintBoardSketch extends Sketch {
   List paint = [];
   List tempPaint1 = [];
   List tempPaint2 = [];
+  ByteData? pixelBeforePaint;
+  ByteData? pixelAfterPaint;
   bool coin = true;
   bool runnyColors = false;
   Color paintColor = Color.fromARGB(255, 47, 6, 230);
@@ -87,11 +91,75 @@ class PaintBoardSketch extends Sketch {
  */
 
     if (paint.isNotEmpty) {
-      drawLinePoints(100, 100, 230, 250, 100);
-      await loadPixels(); // COPY the screen image into the pixels array
+      //TEMP CODE----------------------
+      await loadPixels(); // COPY the screen image into the pixels array //1.
+      pixelBeforePaint = pixels; //2.
+      drawLinePoints(100, 100, 230, 250, 100); //3.
+      await loadPixels(); // COPY the screen image into the pixels array//4.
+      pixelAfterPaint = pixels; //5.
+      updateCanvas();
       await updatePixels(); // Draws pixels array buffer to screen
+
+      paintColor = Color.fromARGB(151, 56, 238, 1);
+      await loadPixels(); // COPY the screen image into the pixels array //1.
+      pixelBeforePaint = pixels; //2.
+      drawLinePoints(110, 110, 240, 260, 100); //3.
+      await loadPixels(); // COPY the screen image into the pixels array//4.
+      pixelAfterPaint = pixels; //5.
+      updateCanvas();
+      await updatePixels(); // Draws pixels array buffer to screen
+
+      paintColor = Color.fromARGB(237, 255, 137, 3);
+      await loadPixels(); // COPY the screen image into the pixels array //1.
+      pixelBeforePaint = pixels; //2.
+      drawLinePoints(130, 110, 250, 280, 100); //3.
+      await loadPixels(); // COPY the screen image into the pixels array//4.
+      pixelAfterPaint = pixels; //5.
+      updateCanvas();
+      await updatePixels(); // Draws pixels array buffer to screen
+      //END TEMP CODE _-----0-0--------------------------------------------------
+
       noLoop();
     }
+  }
+
+/**
+ * When calledd this method blend 2 pixels arrays. the bottom capturing the current canvans and the top capturing recent paint commands
+ * this will cause the paint to blend. we need to investigate to see if the blend goes to the right and down
+ */
+  void updateCanvas() {
+    Color bottomColor;
+    Color topColor;
+    for (int row = 0; row < height; ++row) {
+      for (int col = 0; col < width; ++col) {
+        bottomColor = getPixelColor(col, row, width, pixelBeforePaint);
+        topColor = getPixelColor(col, row, width, pixelAfterPaint);
+
+        int newRed = round((bottomColor.red + topColor.red) / 2);
+        int newGreen = round((bottomColor.green + topColor.green) / 2);
+        int newBlue = round((bottomColor.blue + topColor.blue) / 2);
+        set(
+            x: col,
+            y: row,
+            color: Color.fromARGB(255, newRed, newGreen, newBlue));
+      }
+    }
+  }
+
+/***
+ * returns the color of a entry in a pixel array
+ */
+  Color getPixelColor(int x, int y, int w, ByteData? bd) {
+    final pixelDataOffset = _getBitmapPixelOffset(
+      imageWidth: w,
+      x: x,
+      y: y,
+    );
+    final imageData = bd!;
+    final rgbaColor = imageData.getUint32(pixelDataOffset);
+    final argbColor =
+        ((rgbaColor & 0x000000FF) << 24) | ((rgbaColor & 0xFFFFFF00) >> 8);
+    return Color(argbColor);
   }
 
   void addPaint() {
@@ -180,6 +248,13 @@ class PaintBoardSketch extends Sketch {
   //   newB,
   //   newN
   // ]); // replace the current pixel color with the newly calculated color
-// }?
+// }
 
+  int _getBitmapPixelOffset({
+    required int imageWidth,
+    required int x,
+    required int y,
+  }) {
+    return ((y * imageWidth) + x) * 4;
+  }
 }
